@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เช็ควันหมดอายุ Ortho</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/zxing-wasm@2.1.2/dist/iife/reader/index.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root{--bg:#F5F6F3;--card:#FFFFFF;--ink:#16211D;--mute:#4A5752;--line:#DDE2DE;--field:#C9CFCB;--accent:#0E6B5C;--accent-soft:#E4ECE9;
+--red:#B42318;--red-bg:#FDECEA;--red-ink:#8A1C12;--orange:#B54708;--orange-bg:#FEF0C7;--orange-ink:#7A3A05;
+--green:#067647;--green-bg:#E7F6EC;--green-ink:#05532F;--blue-bg:#EAF1FD;--blue-ink:#123F8C;--purple:#6B3FA0}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',system-ui,sans-serif;font-size:15px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+.app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.view{display:none;flex:1;flex-direction:column;padding:16px 20px 96px;gap:14px}
+.view.on{display:flex}
+h1{margin:0;font-size:22px;font-weight:600}
+h2{margin:0;font-size:15px;font-weight:600}
+.sub{font-size:13px;color:var(--mute)}
+.row{display:flex;gap:8px;align-items:center}
+.between{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card{background:var(--card);border-radius:14px;padding:14px}
+.list{background:var(--card);border-radius:12px;overflow:hidden}
+.li{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-bottom:1px solid #EEF0EE;font-size:14px;align-items:center}
+.li:last-child{border-bottom:0}
+.btn{height:52px;border:0;border-radius:12px;background:var(--accent);color:#fff;font-size:16px;font-weight:600;width:100%;cursor:pointer}
+.btn.dark{background:var(--ink)}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--field);font-weight:400;height:46px}
+.btn.sm{height:38px;width:auto;padding:0 14px;font-size:14px}
+.btn:disabled{opacity:.5}
+input[type=text],input[type=password],input[type=number],input[type=search],select{height:46px;border:1px solid var(--field);border-radius:10px;padding:0 12px;background:#fff;width:100%;font-size:16px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.chips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.chip{border:0;border-radius:10px;padding:10px;text-align:left;cursor:pointer}
+.chip b{display:block;font-size:24px;line-height:1.2}
+.chip span{font-size:12px}
+.c-red{background:var(--red-bg);color:var(--red-ink)}.c-orange{background:var(--orange-bg);color:var(--orange-ink)}
+.c-blue{background:var(--blue-bg);color:var(--blue-ink)}.c-green{background:var(--green-bg);color:var(--green-ink)}
+.c-gray{background:#ECEEEC;color:#3A4440}.c-yellow{background:#FFF7DB;color:#6B4E00}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:#E4E8E5;border-radius:10px;padding:4px;gap:4px}
+.seg button{height:40px;border:0;border-radius:8px;background:transparent;color:var(--mute);cursor:pointer}
+.seg button.on{background:#fff;color:var(--ink);font-weight:600}
+#reader{position:relative;width:100%;min-height:220px;border-radius:16px;overflow:hidden;background:#1D2522;display:flex;align-items:center;justify-content:center;color:#D5DDD9;font-size:14px;text-align:center}
+#reader video{width:100%!important;display:block;border-radius:16px}
+#reader .guide{position:absolute;left:5%;right:5%;top:25%;bottom:25%;border:2px solid #3FD3A8;border-radius:10px;pointer-events:none}
+.tip{font-size:12px;color:var(--mute);margin-top:-6px}
+.tag{font-size:12px;border-radius:6px;padding:2px 8px;white-space:nowrap}
+.banner{border-radius:14px;padding:16px;display:flex;gap:12px;align-items:center}
+.banner .t{font-size:20px;font-weight:600}
+.dot{width:44px;height:44px;border-radius:22px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:14px}
+.k{font-size:12px;color:var(--mute)}
+.opt{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;cursor:pointer}
+.opt.on{border:2px solid var(--accent);padding:9px 11px}
+.opt input{width:18px;height:18px;accent-color:var(--accent);flex:none}
+.opt .x{flex:1}
+.d3{display:grid;grid-template-columns:1fr 1.2fr 1.2fr;gap:8px}
+nav{position:fixed;bottom:0;left:0;right:0;height:64px;background:#fff;border-top:1px solid var(--line);display:none;justify-content:center}
+nav.on{display:flex}
+nav .in{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;width:100%;max-width:480px}
+nav button{border:0;background:none;font-size:12px;color:var(--mute);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer}
+nav button.on{color:var(--accent);font-weight:600}
+nav svg{width:22px;height:22px}
+#toast{position:fixed;left:50%;bottom:80px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;display:none;max-width:90%;z-index:20}
+#busy{position:fixed;inset:0;background:rgba(245,246,243,.6);display:none;align-items:center;justify-content:center;z-index:10;font-size:14px}
+.err{color:var(--red);font-size:13px;min-height:18px}
+.hide{display:none!important}
+.btn.danger{background:var(--red);color:#fff}
+.mono{font-family:ui-monospace,Menlo,monospace}
+.catpick{position:relative;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--field);border-radius:12px;padding-left:14px}
+.catpick span{font-size:13px;color:var(--mute);flex:none}
+.catpick select{border:0;background:transparent;height:50px;font-size:17px;font-weight:600;padding:0 40px 0 0;appearance:none;-webkit-appearance:none;cursor:pointer}
+.catpick::after{content:"";position:absolute;right:16px;top:50%;width:8px;height:8px;border-right:2px solid var(--mute);border-bottom:2px solid var(--mute);transform:translateY(-70%) rotate(45deg);pointer-events:none}
+.summary{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.summary .big{font-size:20px;font-weight:600}
+.stat{display:flex;gap:16px}.stat div{display:flex;flex-direction:column;align-items:flex-end}
+.stat b{font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}.stat span{font-size:12px;color:var(--mute)}
+.itembtn{width:100%;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.li.itembtn:hover{background:#F2F4F2}.li.fresh{background:#FFF6D6}.li.sel{background:var(--accent-soft)}
+.idbox{display:flex;justify-content:space-between;align-items:center;background:#F2F4F2;border-radius:10px;padding:10px 12px;font-size:14px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- เข้าสู่ระบบ -->
+<section id="v-login" class="view on" style="padding-top:64px;gap:28px">
+  <div>
+    <h1 style="font-size:26px;line-height:1.3">เช็ควันหมดอายุ<br>Implant &amp; Instrument</h1>
+    <div class="sub" style="font-size:15px">ห้องผ่าตัดออร์โธ</div>
+  </div>
+  <form id="f-login" style="display:flex;flex-direction:column;gap:16px">
+    <label class="f">ชื่อผู้ใช้<input type="text" id="l-user" autocomplete="username" autocapitalize="none"></label>
+    <label class="f">PIN 6 หลัก<input type="password" id="l-pin" inputmode="numeric" maxlength="6" autocomplete="current-password"></label>
+    <div class="err" id="l-err"></div>
+    <button class="btn" type="submit">เข้าสู่ระบบ</button>
+  </form>
+</section>
+
+<!-- สแกน -->
+<section id="v-scan" class="view">
+  <div class="between">
+    <div><div class="sub" id="s-date"></div><h1>สแกนซอง</h1></div>
+    <span class="tag c-gray" id="s-user" style="font-size:13px;padding:6px 12px;border-radius:16px"></span>
+  </div>
+  <div class="chips">
+    <button class="chip c-red" data-go="alerts"><b id="n-exp">–</b><span>หมดอายุ</span></button>
+    <button class="chip c-orange" data-go="alerts"><b id="n-urg">–</b><span id="n-urg-l">ด่วน</span></button>
+    <button class="chip c-blue" data-go="alerts"><b id="n-ster">–</b><span>ส่งสเตอไรล์</span></button>
+  </div>
+  <div class="seg"><button id="m-use" class="on">ใช้งาน / รับเข้า</button><button id="m-audit">ตรวจนับชั้น</button></div>
+  <div id="reader">กด "เปิดกล้อง" แล้วเล็ง barcode บนฉลาก</div>
+  <div class="row">
+    <button class="btn sm" id="cam" style="flex:1">เปิดกล้อง</button>
+    <label class="btn ghost sm" style="flex:1;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden">ถ่าย / เลือกรูปฉลาก<input type="file" id="photo" accept="image/*" aria-label="ถ่ายหรือเลือกรูปฉลาก" style="position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0"></label>
+  </div>
+  <div class="tip">เคล็ดลับ: ถือห่างฉลากประมาณ 10–15 ซม. ให้ barcode กว้างเกือบเต็มกรอบ และเลี่ยงแสงสะท้อนจากซองพลาสติก</div>
+  <form id="f-manual" class="row">
+    <input type="text" id="manual" placeholder="พิมพ์เลข / ใช้เครื่องยิง barcode" autocomplete="off" aria-label="เลข barcode">
+    <button class="btn sm" type="submit">ค้น</button>
+  </form>
+  <div id="audit-box" class="hide" style="display:flex;flex-direction:column;gap:8px">
+    <div class="between"><h2>ตรวจนับ: <span id="a-count">0</span> ซอง</h2><button class="btn sm dark" id="a-end">จบรอบ → รายงาน</button></div>
+    <div class="list" id="a-list"></div>
+  </div>
+  <div id="recent-box" style="display:flex;flex-direction:column;gap:6px">
+    <div class="sub" style="font-weight:600">สแกนล่าสุด</div>
+    <div class="list" id="recent"><div class="li sub">ยังไม่มี</div></div>
+  </div>
+</section>
+
+<!-- ผลสแกน / รายงาน -->
+<section id="v-result" class="view"></section>
+
+<!-- ลงทะเบียน -->
+<section id="v-register" class="view"></section>
+
+<!-- แจ้งเตือน -->
+<section id="v-alerts" class="view"></section>
+
+<!-- คลัง -->
+<section id="v-stock" class="view">
+  <h1>คลัง</h1>
+  <input type="search" id="st-q" placeholder="ค้นหารายการ" aria-label="ค้นหารายการ">
+  <div class="list" id="st-list"></div>
+</section>
+
+<!-- ตั้งค่า -->
+<section id="v-admin" class="view"></section>
+
+<!-- รายการ & หมวดหมู่ (admin) -->
+<section id="v-items" class="view"></section>
+
+</div>
+
+<nav id="nav"><div class="in">
+  <button data-go="scan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M8 8v8M12 8v8M16 8v8"/></svg>สแกน</button>
+  <button data-go="alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9M10 20a2 2 0 0 0 4 0"/></svg>แจ้งเตือน</button>
+  <button data-go="stock"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>คลัง</button>
+  <button data-go="admin"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>ตั้งค่า</button>
+</div></nav>
+<div id="toast"></div>
+<div id="busy">กำลังโหลด…</div>
+
+<script>
+/* ---------- state & helpers ---------- */
+const S = { token: null, user: null, role: null, mode: 'use', audit: [], recent: [], stock: [], reg: null };
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const MONTHS = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+const LV = {
+  ok: { cls: 'c-green', dot: 'var(--green)', t: 'พร้อมใช้' },
+  warn: { cls: 'c-yellow', dot: '#A37C00', t: 'ใกล้หมดอายุ' },
+  urgent: { cls: 'c-orange', dot: 'var(--orange)', t: 'ใกล้หมดอายุมาก' },
+  expired: { cls: 'c-red', dot: 'var(--red)', t: 'หมดอายุแล้ว ห้ามใช้' },
+  none: { cls: 'c-gray', dot: '#5F6B66', t: 'ไม่มีวันหมดอายุในระบบ' },
+  closed: { cls: 'c-gray', dot: '#5F6B66', t: 'barcode นี้ปิดไปแล้ว' }
+};
+
+function store(k, v) { try { v == null ? sessionStorage.removeItem(k) : sessionStorage.setItem(k, v); } catch (e) {} }
+function load(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
+function toast(msg) { const t = $('toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = 'none', 3000); }
+function busy(on) { $('busy').style.display = on ? 'flex' : 'none'; }
+
+/* >>> ใส่ลิงก์ /exec ของ Apps Script ที่ deploy แล้ว <<< */
+const API_URL = 'https://script.google.com/macros/s/ใส่_DEPLOYMENT_ID/exec';
+
+async function call(fn, ...args) {
+  let r;
+  try {
+    // ใช้ text/plain เพื่อไม่ให้เบราว์เซอร์ส่ง CORS preflight (Apps Script ไม่รองรับ OPTIONS)
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ fn: fn, args: args })
+    });
+    r = await res.json();
+  } catch (e) {
+    throw new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจอินเทอร์เน็ต หรือ API_URL');
+  }
+  if (!r.ok) {
+    const m = String(r.error || 'เกิดข้อผิดพลาด').replace(/^Error:\s*/, '');
+    if (m.indexOf('SESSION_EXPIRED') >= 0) { logoutLocal(); toast('หมดเวลาเข้าระบบ กรุณาเข้าใหม่'); }
+    throw new Error(m);
+  }
+  return r.data;
+}
+async function run(fn, ...args) {
+  busy(true);
+  try { return await call(fn, ...args); } catch (e) { if (e.message.indexOf('SESSION_EXPIRED') < 0) toast(e.message); throw e; } finally { busy(false); }
+}
+
+/* BE dates (เวลาบนเครื่อง) */
+function todayParts() { const d = new Date(); return { d: d.getDate(), m: d.getMonth() + 1, y: d.getFullYear() + 543 }; }
+function partsToDate(p) { return new Date(p.y - 543, p.m - 1, p.d); }
+function dateToParts(d) { return { d: d.getDate(), m: d.getMonth() + 1, y: d.getFullYear() + 543 }; }
+function partsStr(p) { return String(p.d).padStart(2, '0') + '/' + String(p.m).padStart(2, '0') + '/' + p.y; }
+function validParts(p) { const d = partsToDate(p); return d.getDate() === p.d && d.getMonth() === p.m - 1; }
+function dateSelects(prefix, p) {
+  const y0 = todayParts().y;
+  let d = '', m = '', y = '';
+  for (let i = 1; i <= 31; i++) d += `<option value="${i}"${i === p.d ? ' selected' : ''}>${i}</option>`;
+  MONTHS.forEach((n, i) => m += `<option value="${i + 1}"${i + 1 === p.m ? ' selected' : ''}>${n}</option>`);
+  for (let i = y0 - 1; i <= y0 + 2; i++) y += `<option value="${i}"${i === p.y ? ' selected' : ''}>${i}</option>`;
+  return `<div class="d3"><label class="f" style="font-weight:400">วัน<select id="${prefix}-d">${d}</select></label>
+  <label class="f" style="font-weight:400">เดือน<select id="${prefix}-m">${m}</select></label>
+  <label class="f" style="font-weight:400">ปี พ.ศ.<select id="${prefix}-y">${y}</select></label></div>`;
+}
+function readSelects(prefix) { return { d: +$(prefix + '-d').value, m: +$(prefix + '-m').value, y: +$(prefix + '-y').value }; }
+
+/* sounds */
+let actx = null;
+function beep(freq, ms) {
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.frequency.value = freq || 880; o.connect(g); g.connect(actx.destination);
+    g.gain.value = 0.15; o.start(); o.stop(actx.currentTime + (ms || 120) / 1000);
+  } catch (e) {}
+  if (navigator.vibrate) navigator.vibrate(60);
+}
+function levelSound(lv) { if (lv === 'expired') { beep(300, 400); } else if (lv === 'urgent' || lv === 'warn') { beep(600, 200); } else beep(1000, 100); }
+
+/* ---------- navigation ---------- */
+function show(v) {
+  document.querySelectorAll('.view').forEach(e => e.classList.toggle('on', e.id === 'v-' + v));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.go === v));
+  $('nav').classList.toggle('on', v !== 'login');
+  if (v !== 'scan') stopCam();
+  window.scrollTo(0, 0);
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-go]');
+  if (!b) return;
+  const v = b.dataset.go;
+  if (v === 'scan') openScan(); else if (v === 'alerts') openAlerts(); else if (v === 'stock') openStock(); else if (v === 'admin') openAdmin();
+});
+
+/* ---------- login ---------- */
+$('f-login').addEventListener('submit', async e => {
+  e.preventDefault();
+  $('l-err').textContent = '';
+  try {
+    busy(true);
+    const r = await call('login', $('l-user').value, $('l-pin').value);
+    S.token = r.token; S.user = r.username; S.role = r.role;
+    store('tok', JSON.stringify(r));
+    $('l-pin').value = '';
+    openScan();
+  } catch (err) { $('l-err').textContent = err.message; } finally { busy(false); }
+});
+function logoutLocal() { S.token = null; store('tok', null); show('login'); }
+
+/* ---------- scan view ---------- */
+async function openScan() {
+  show('scan');
+  const t = todayParts();
+  $('s-date').textContent = t.d + ' ' + MONTHS[t.m - 1] + ' ' + t.y;
+  $('s-user').textContent = S.user + (S.role === 'admin' ? ' · admin' : '');
+  try {
+    const a = await call('alerts', S.token);
+    $('n-exp').textContent = a.counts.expired; $('n-urg').textContent = a.counts.urgent;
+    $('n-urg-l').textContent = '≤ ' + a.settings.urgent + ' วัน'; $('n-ster').textContent = a.counts.ster;
+  } catch (e) {}
+}
+$('m-use').onclick = () => setMode('use');
+$('m-audit').onclick = () => setMode('audit');
+function setMode(m) {
+  S.mode = m;
+  $('m-use').classList.toggle('on', m === 'use'); $('m-audit').classList.toggle('on', m === 'audit');
+  $('audit-box').classList.toggle('hide', m !== 'audit'); $('recent-box').classList.toggle('hide', m === 'audit');
+  if (m === 'audit') { S.audit = []; renderAudit(); }
+}
+
+/* camera & photo scanning — zxing-wasm (ZXing C++) อ่าน barcode เส้นเล็กได้ดีกว่า; html5-qrcode เป็นตัวสำรอง */
+let qr = null, scanning = false, lastCode = '', lastAt = 0;
+const cam = { stream: null, video: null, timer: null, busy: false, canvas: null };
+const ZX_OPTS = { tryHarder: true, maxNumberOfSymbols: 4 };
+let zxReady = false;
+const zxProbe = (window.ZXingWASM && ZXingWASM.readBarcodes && window.ImageData)
+  ? ZXingWASM.readBarcodes(new ImageData(8, 8), {}).then(() => { zxReady = true; }, () => { zxReady = false; })
+  : Promise.resolve();
+const hasZX = () => zxReady;
+function pickCode(results) {
+  const t = (results || []).map(r => r && r.text ? String(r.text).trim() : '').filter(Boolean);
+  if (!t.length) return null;
+  t.sort((a, b) => (/^\d+$/.test(b) - /^\d+$/.test(a)) || b.length - a.length);
+  return t[0];
+}
+async function zxRead(input) { try { return pickCode(await ZXingWASM.readBarcodes(input, ZX_OPTS)); } catch (e) { return null; } }
+function grab(src, sx, sy, sw, sh, maxSide) {
+  const k = Math.min(1, maxSide / Math.max(sw, sh));
+  const c = cam.canvas || (cam.canvas = document.createElement('canvas'));
+  c.width = Math.max(1, Math.round(sw * k)); c.height = Math.max(1, Math.round(sh * k));
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(src, sx, sy, sw, sh, 0, 0, c.width, c.height);
+  return g.getImageData(0, 0, c.width, c.height);
+}
+function loadBitmap(file) {
+  if (window.createImageBitmap) return createImageBitmap(file).catch(() => loadImg(file));
+  return loadImg(file);
+}
+function loadImg(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file), im = new Image();
+    im.onload = () => { URL.revokeObjectURL(url); res(im); };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('เปิดรูปไม่ได้')); };
+    im.src = url;
+  });
+}
+async function decodePhoto(file) {
+  await zxProbe;
+  if (hasZX()) {
+    let code = await zxRead(file);
+    if (code) return code;
+    const im = await loadBitmap(file);
+    const W = im.width, H = im.height;
+    const tries = [
+      [0, 0, W, H, 2400], [0, 0, W, H, 1400],
+      [W * 0.15, H * 0.2, W * 0.7, H * 0.6, 2000],
+      [0, H * 0.25, W, H * 0.5, 2400]
+    ];
+    for (const t of tries) {
+      code = await zxRead(grab(im, t[0], t[1], t[2], t[3], t[4]));
+      if (code) return code;
+    }
+    return null;
+  }
+  if (!window.Html5Qrcode) throw new Error('โหลดตัวสแกนไม่ได้');
+  const box = document.createElement('div');
+  box.id = 'qr-file-' + Date.now(); box.style.cssText = 'position:absolute;left:-9999px;top:0;width:800px;height:600px';
+  document.body.appendChild(box);
+  const fq = new Html5Qrcode(box.id, qrConfig());
+  try { return await fq.scanFile(file, false); } catch (e) { return null; } finally { try { fq.clear(); } catch (x) {} box.remove(); }
+}
+function qrConfig() {
+  const F = window.Html5QrcodeSupportedFormats || {};
+  const list = ['CODE_128', 'CODE_39', 'CODE_93', 'EAN_13', 'EAN_8', 'ITF', 'CODABAR', 'UPC_A', 'UPC_E', 'QR_CODE', 'DATA_MATRIX']
+    .map(k => F[k]).filter(v => v !== undefined);
+  return { formatsToSupport: list, verbose: false, experimentalFeatures: { useBarCodeDetectorIfSupported: true } };
+}
+async function startZXCam() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('เบราว์เซอร์นี้ไม่รองรับกล้อง');
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } } });
+  const v = document.createElement('video');
+  v.setAttribute('playsinline', ''); v.setAttribute('muted', ''); v.muted = true; v.autoplay = true; v.srcObject = stream;
+  const r = $('reader'); r.textContent = ''; r.appendChild(v);
+  const guide = document.createElement('div'); guide.className = 'guide'; r.appendChild(guide);
+  await v.play();
+  try {
+    const tr = stream.getVideoTracks()[0], c = tr.getCapabilities ? tr.getCapabilities() : null;
+    if (c && c.focusMode && c.focusMode.indexOf('continuous') >= 0) await tr.applyConstraints({ advanced: [{ focusMode: 'continuous' }] });
+  } catch (e) {}
+  cam.stream = stream; cam.video = v;
+  cam.timer = setInterval(async () => {
+    if (cam.busy || !v.videoWidth) return;
+    cam.busy = true;
+    try {
+      const W = v.videoWidth, H = v.videoHeight;
+      const code = await zxRead(grab(v, W * 0.05, H * 0.25, W * 0.9, H * 0.5, 1600));
+      if (code && scanning) onDecode(code);
+    } finally { cam.busy = false; }
+  }, 250);
+}
+$('cam').onclick = async () => {
+  if (scanning) { stopCam(); return; }
+  try {
+    await zxProbe;
+    if (hasZX()) await startZXCam();
+    else if (window.Html5Qrcode) {
+      $('reader').textContent = '';
+      qr = qr || new Html5Qrcode('reader', qrConfig());
+      await qr.start({ facingMode: 'environment' },
+        { fps: 10, qrbox: (w, h) => ({ width: Math.floor(w * 0.85), height: Math.floor(Math.min(h, w) * 0.45) }) },
+        onDecode, () => {});
+    } else throw new Error('โหลดตัวสแกนไม่ได้');
+    scanning = true; $('cam').textContent = 'ปิดกล้อง';
+  } catch (e) {
+    stopCam();
+    $('reader').textContent = 'เปิดกล้องในหน้านี้ไม่ได้ — ใช้ปุ่ม "ถ่าย / เลือกรูปฉลาก" แทน';
+    toast('เปิดกล้องไม่ได้: ' + (e && e.message ? e.message : e));
+  }
+};
+async function stopCam() {
+  if (cam.timer) { clearInterval(cam.timer); cam.timer = null; }
+  if (cam.stream) { cam.stream.getTracks().forEach(t => t.stop()); cam.stream = null; }
+  if (cam.video) { cam.video.remove(); cam.video = null; $('reader').textContent = 'กด "เปิดกล้อง" แล้วเล็ง barcode ให้อยู่ในกรอบ'; }
+  if (qr && scanning) { try { await qr.stop(); } catch (e) {} }
+  scanning = false; $('cam').textContent = 'เปิดกล้อง';
+}
+function onDecode(text) {
+  const now = Date.now();
+  if (text === lastCode && now - lastAt < 2500) return;
+  lastCode = text; lastAt = now;
+  if (S.mode === 'audit') auditScan(text);
+  else { beep(); stopCam(); handleCode(text); }
+}
+$('photo').onchange = async e => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!f) return;
+  busy(true);
+  let text = null;
+  try { text = await decodePhoto(f); } catch (err) { text = null; }
+  busy(false);
+  if (!text) { toast('อ่าน barcode ในรูปไม่ได้ — ถ่ายใกล้ๆ ให้ barcode กว้างเกือบเต็มรูป หรือพิมพ์เลขใต้ barcode แทน'); return; }
+  beep();
+  S.mode === 'audit' ? auditScan(text) : handleCode(text);
+};
+$('f-manual').addEventListener('submit', e => {
+  e.preventDefault();
+  const v = $('manual').value.trim();
+  if (!v) return;
+  $('manual').value = '';
+  S.mode === 'audit' ? auditScan(v) : handleCode(v);
+});
+
+async function handleCode(code) {
+  let res;
+  try { res = await run('lookup', S.token, code); } catch (e) { return; }
+  if (res.kind === 'new') openRegister(res); else { levelSound(res.pack.level); renderResult(res); }
+}
+function addRecent(p) {
+  S.recent = [p].concat(S.recent.filter(x => x.barcode !== p.barcode)).slice(0, 5);
+  $('recent').innerHTML = S.recent.map(x => `<div class="li"><span>${esc(x.name)}</span><span class="tag ${LV[x.level].cls}">${x.level === 'closed' ? esc(x.status) : x.daysLeft < 0 ? 'หมดอายุ' : x.daysLeft + ' วัน'}</span></div>`).join('');
+}
+
+/* ---------- result ---------- */
+function renderResult(res) {
+  const p = res.pack, lv = LV[p.level] || LV.none;
+  addRecent(p);
+  const sub = p.level === 'closed' ? 'สถานะ: ' + p.status + (p.sent ? ' · ' + p.sent : '')
+    : p.daysLeft == null ? '' : p.daysLeft < 0 ? 'เลยวันหมดอายุมา ' + (-p.daysLeft) + ' วัน' : 'เหลืออีก ' + p.daysLeft + ' วัน';
+  let h = `<div class="row"><button class="btn ghost sm" data-go="scan">← สแกนต่อ</button></div>
+  <div class="banner ${lv.cls}"><div class="dot" style="background:${lv.dot}">${p.level === 'expired' ? '!' : p.level === 'closed' ? '–' : '✓'}</div>
+  <div><div class="t">${lv.t}</div><div>${esc(sub)}</div></div></div>
+  <div class="card" style="display:flex;flex-direction:column;gap:12px">
+    <div><div class="k">${esc(p.cat)} · barcode ${esc(p.barcode)} · ${esc(p.packId)}</div><div style="font-size:19px;font-weight:600;line-height:1.35">${esc(p.name)}</div></div>
+    <div class="grid2"><div><div class="k">วันสเตอไรล์</div><b>${esc(p.sterile || '—')}</b></div><div><div class="k">วันหมดอายุ</div><b>${esc(p.expiry || '—')}</b></div>
+    <div><div class="k">ลงทะเบียนโดย</div>${esc(p.by || '—')}</div><div><div class="k">รอบสเตอไรล์</div>รอบที่ ${p.cycle || 1}</div></div>
+  </div>`;
+  if (res.kind === 'ready') {
+    if (res.fefo && p.level !== 'expired') h += `<div class="card c-orange"><b>มีซองเดียวกันที่หมดอายุก่อน</b><div>หมดอายุ ${esc(res.fefo.earliest)} อีก ${res.fefo.count} ซอง — ควรหยิบซองนั้นก่อน</div></div>`;
+    if (p.level === 'expired') {
+      h += `<div class="sub">ของทดแทนที่พร้อมใช้: <b style="color:var(--ink)">${res.spare} ซอง</b></div>
+      <button class="btn dark" id="r-ster">ส่งสเตอไรล์ใหม่</button>`;
+    } else {
+      h += `<label class="f">HN ผู้ป่วย <span class="sub" style="font-weight:400">(ไม่บังคับ — ใช้ตามรอย implant)</span><input type="text" id="r-hn" inputmode="numeric"></label>
+      <button class="btn" id="r-use">ใช้แล้ว → ส่งสเตอไรล์</button>`;
+    }
+    h += `<button class="btn ghost" id="r-disc">ทิ้ง / ชำรุด</button>
+    <div id="r-disc-box" class="card hide" style="display:flex;flex-direction:column;gap:10px">
+      <label class="f">เหตุผล<input type="text" id="r-reason" placeholder="เช่น ห่อขาด ชิ้นงานเสียหาย"></label>
+      <button class="btn dark" id="r-disc-ok">ยืนยันทิ้ง</button></div>`;
+  }
+  $('v-result').innerHTML = h;
+  show('result');
+  if (res.kind !== 'ready') return;
+  const done = async (action, note, msg) => {
+    try { await run('updatePack', S.token, p.barcode, action, note); toast(msg); openScan(); } catch (e) {}
+  };
+  if ($('r-use')) $('r-use').onclick = () => done('use', $('r-hn').value.trim(), 'บันทึกแล้ว: ส่งสเตอไรล์');
+  if ($('r-ster')) $('r-ster').onclick = () => done('resterilize', '', 'บันทึกแล้ว: ส่งสเตอไรล์ใหม่');
+  $('r-disc').onclick = () => $('r-disc-box').classList.toggle('hide');
+  $('r-disc-ok').onclick = () => {
+    const r = $('r-reason').value.trim();
+    if (!r) { toast('ใส่เหตุผลก่อน'); return; }
+    done('discard', r, 'บันทึกแล้ว: ทิ้ง');
+  };
+}
+
+/* ---------- register ---------- */
+function openRegister(res) {
+  S.reg = { res: res, sel: null, q: '', sterile: todayParts(), editExp: false };
+  if (res.pending.length) S.reg.sel = { mode: 'return', key: res.pending[0].packId };
+  renderRegister();
+  show('register');
+}
+function shelfFor(itemId) {
+  const it = S.reg.res.items.find(i => i.id === itemId);
+  return (it && it.shelf) || S.reg.res.shelfDefault;
+}
+function selItemId() {
+  const s = S.reg.sel; if (!s) return null;
+  if (s.mode === 'return') { const p = S.reg.res.pending.find(x => x.packId === s.key); return p && p.itemId; }
+  if (s.mode === 'legacy') return S.reg.res.legacy[s.key].itemId;
+  return s.key;
+}
+function opt(mode, key, label, right) {
+  const on = S.reg.sel && S.reg.sel.mode === mode && S.reg.sel.key === key;
+  return `<label class="opt${on ? ' on' : ''}"><input type="radio" name="pick" data-mode="${mode}" data-key="${esc(key)}"${on ? ' checked' : ''}><span class="x">${esc(label)}</span><span class="sub">${esc(right || '')}</span></label>`;
+}
+function renderRegister() {
+  const R = S.reg, res = R.res;
+  let h = `<div class="row"><button class="btn ghost sm" data-go="scan">← ยกเลิก</button></div>
+  <div><h1 style="font-size:20px">barcode ใหม่</h1><div class="sub">${esc(res.barcode)} · ยังไม่อยู่ในระบบ</div></div>
+  <h2>1. ซองนี้คืออะไร</h2>`;
+  if (res.pending.length) h += `<div class="sub">รอกลับจากสเตอไรล์</div>` + res.pending.map(p => opt('return', p.packId, p.name, 'ส่ง ' + p.sent)).join('');
+  h += `<input type="search" id="rg-q" placeholder="พิมพ์ชื่อเพื่อค้นหา เช่น tubular 6" value="${esc(R.q)}" aria-label="ค้นหารายการ">`;
+  const words = R.q.toLowerCase().split(/\s+/).filter(Boolean);
+  const match = n => words.every(w => n.toLowerCase().indexOf(w) >= 0);
+  if (R.q.trim().length >= 2) {
+    const lg = res.legacy.map((g, i) => ({ g: g, i: i })).filter(x => match(x.g.name)).slice(0, 15);
+    if (lg.length) h += `<div class="sub">ซองเดิมจากไฟล์ที่ยังไม่ผูก barcode</div>` + lg.map(x => opt('legacy', String(x.i), x.g.name, 'หมด ' + x.g.expiry + ' · ' + x.g.count + ' ซอง')).join('');
+    const hits = res.items.filter(i => match(i.name)).slice(0, 15);
+    h += hits.length ? `<div class="sub">ลงทะเบียนเป็นซองใหม่</div>` + hits.map(i => opt('new', i.id, i.name, '')).join('')
+      : `<div class="sub">ไม่พบรายการ — admin เพิ่มรายการได้ในชีต Items</div>`;
+  } else {
+    if (res.legacy.length) h += `<div class="sub">มีซองเดิมจากไฟล์ที่ยังไม่ผูก barcode ${res.legacy.length} กลุ่ม — พิมพ์ชื่อเพื่อค้นหา</div>`;
+    if (R.sel && R.sel.mode === 'legacy') { const g = res.legacy[R.sel.key]; h += opt('legacy', R.sel.key, g.name, 'หมด ' + g.expiry + ' · ' + g.count + ' ซอง'); }
+    if (R.sel && R.sel.mode === 'new') { const it = res.items.find(i => i.id === R.sel.key); if (it) h += opt('new', it.id, it.name, ''); }
+  }
+  const legacy = R.sel && R.sel.mode === 'legacy';
+  if (legacy) {
+    const g = res.legacy[R.sel.key];
+    h += `<div class="card"><h2>วันหมดอายุตามข้อมูลเดิม</h2><div style="font-size:22px;font-weight:600">${esc(g.expiry)}</div><div class="sub">ตรวจให้ตรงกับฉลาก ถ้าไม่ตรงให้เลือกกลุ่มอื่น</div></div>`;
+  } else {
+    h += `<div class="between"><h2>2. วันสเตอไรล์ (พ.ศ.)</h2><button class="btn ghost sm" id="rg-today" style="height:34px">วันนี้</button></div>` + dateSelects('rs', R.sterile);
+    const itemId = selItemId();
+    h += `<div class="card" style="display:flex;flex-direction:column;gap:6px"><h2>3. วันหมดอายุ</h2>`;
+    if (R.editExp) h += dateSelects('re', R.expiry || R.sterile) + `<button class="btn ghost sm" id="rg-auto" style="height:34px;align-self:flex-start">ใช้วันที่คำนวณอัตโนมัติ</button>`;
+    else {
+      const ok = validParts(R.sterile);
+      const exp = ok && itemId ? partsStr(dateToParts(new Date(partsToDate(R.sterile).getTime() + (shelfFor(itemId) - 1) * 86400000))) : '—';
+      h += `<div class="between"><div style="font-size:22px;font-weight:600">${exp}</div><div class="sub">${itemId ? 'อายุ ' + shelfFor(itemId) + ' วัน (นับวันนึ่งเป็นวันที่ 1)' : 'เลือกรายการก่อน'}</div></div>
+      <button class="btn ghost sm" id="rg-edit" style="height:34px;align-self:flex-start">ไม่ตรงกับฉลาก? แก้วันหมดอายุ</button>`;
+    }
+    h += `</div>`;
+  }
+  h += `<button class="btn" id="rg-save"${R.sel ? '' : ' disabled'}>บันทึก → พร้อมใช้</button>`;
+  $('v-register').innerHTML = h;
+
+  document.querySelectorAll('#v-register input[name=pick]').forEach(r => r.onchange = () => {
+    S.reg.sel = { mode: r.dataset.mode, key: r.dataset.key }; keepDates(); renderRegister();
+  });
+  const q = $('rg-q');
+  q.oninput = () => { S.reg.q = q.value; keepDates(); renderRegister(); const n = $('rg-q'); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
+  ['rs-d', 'rs-m', 'rs-y'].forEach(id => { if ($(id)) $(id).onchange = () => { keepDates(); renderRegister(); }; });
+  if ($('rg-today')) $('rg-today').onclick = () => { S.reg.sterile = todayParts(); renderRegister(); };
+  if ($('rg-edit')) $('rg-edit').onclick = () => { keepDates(); S.reg.editExp = true; S.reg.expiry = S.reg.expiry || S.reg.sterile; renderRegister(); };
+  if ($('rg-auto')) $('rg-auto').onclick = () => { keepDates(); S.reg.editExp = false; S.reg.expiry = null; renderRegister(); };
+  $('rg-save').onclick = saveRegister;
+}
+function keepDates() {
+  if ($('rs-d')) S.reg.sterile = readSelects('rs');
+  if ($('re-d')) S.reg.expiry = readSelects('re');
+}
+async function saveRegister() {
+  keepDates();
+  const R = S.reg, s = R.sel;
+  if (!s) { toast('เลือกรายการก่อน'); return; }
+  const p = { barcode: R.res.barcode, mode: s.mode };
+  if (s.mode === 'legacy') { const g = R.res.legacy[s.key]; p.itemId = g.itemId; p.expiry = g.expiry; }
+  else {
+    if (!validParts(R.sterile)) { toast('วันสเตอไรล์ไม่ถูกต้อง'); return; }
+    if (partsToDate(R.sterile) > new Date()) { toast('วันสเตอไรล์ต้องไม่เกินวันนี้'); return; }
+    p.sterile = R.sterile;
+    if (R.editExp) { if (!validParts(R.expiry)) { toast('วันหมดอายุไม่ถูกต้อง'); return; } p.expiry = R.expiry; }
+    if (s.mode === 'return') p.packId = s.key; else p.itemId = s.key;
+  }
+  let res;
+  try { res = await run('register', S.token, p); } catch (e) { return; }
+  toast('ลงทะเบียนแล้ว');
+  levelSound(res.pack.level);
+  renderResult(res);
+}
+
+/* ---------- audit ---------- */
+async function auditScan(code) {
+  if (S.audit.some(a => a.barcode === code)) { beep(1400, 60); return; }
+  try {
+    const r = await call('auditCheck', S.token, code);
+    const p = r.kind === 'new' ? { barcode: code, name: 'ไม่อยู่ในระบบ — ต้องลงทะเบียน', level: 'none', daysLeft: null } : r.pack;
+    levelSound(p.level);
+    S.audit.unshift(p);
+    renderAudit();
+  } catch (e) { toast(e.message); }
+}
+function renderAudit() {
+  $('a-count').textContent = S.audit.length;
+  $('a-list').innerHTML = S.audit.length ? S.audit.slice(0, 30).map(p => `<div class="li"><span>${esc(p.name)}</span><span class="tag ${LV[p.level].cls}">${p.level === 'closed' ? esc(p.status) : p.daysLeft == null ? 'ใหม่' : p.daysLeft < 0 ? 'หมดอายุ' : p.daysLeft + ' วัน'}</span></div>`).join('') : '<div class="li sub">เริ่มสแกนซองบนชั้นได้เลย</div>';
+}
+$('a-end').onclick = async () => {
+  let r;
+  try { r = await run('auditReport', S.token, S.audit.map(a => a.barcode)); } catch (e) { return; }
+  const bad = S.audit.filter(a => a.level === 'expired' || a.level === 'closed');
+  $('v-result').innerHTML = `<div class="row"><button class="btn ghost sm" data-go="scan">← กลับ</button></div>
+  <h1>รายงานตรวจนับ</h1>
+  <div class="chips"><div class="chip c-green"><b>${r.scanned}</b><span>สแกนแล้ว</span></div><div class="chip c-orange"><b>${r.missing.length}</b><span>ไม่พบบนชั้น</span></div><div class="chip c-gray"><b>${r.unlinked}</b><span>ยังไม่ผูก barcode</span></div></div>
+  ${bad.length ? `<h2>เจอบนชั้นแต่ไม่ควรอยู่</h2><div class="list">${bad.map(p => `<div class="li"><span>${esc(p.name)}</span><span class="tag ${LV[p.level].cls}">${p.level === 'closed' ? esc(p.status) : 'หมดอายุ'}</span></div>`).join('')}</div>` : ''}
+  <h2>อยู่ในระบบว่าพร้อมใช้ แต่ไม่ถูกสแกน</h2>
+  <div class="list">${r.missing.length ? r.missing.map(p => `<div class="li"><span>${esc(p.name)}<br><span class="sub">${esc(p.barcode)} · หมด ${esc(p.expiry)}</span></span></div>`).join('') : '<div class="li sub">ครบทุกซอง</div>'}</div>`;
+  show('result');
+  setMode('use');
+};
+
+/* ---------- alerts ---------- */
+async function openAlerts() {
+  show('alerts');
+  $('v-alerts').innerHTML = '<div class="sub">กำลังโหลด…</div>';
+  let a;
+  try { a = await call('alerts', S.token); } catch (e) { $('v-alerts').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; return; }
+  const sec = (title, cls, rows, total) => rows.length ? `<section style="display:flex;flex-direction:column;gap:6px">
+    <div class="between"><h2 class="${cls}" style="background:none">${title}</h2><span class="sub">${total} ซอง</span></div>
+    <div class="list">${rows.map(g => `<div class="li"><span>${esc(g.name)}${g.count > 1 ? ' ×' + g.count : ''}${g.unlinked ? ' <span class="sub">(ยังไม่ผูก ' + g.unlinked + ')</span>' : ''}</span><span class="tag ${cls}">${esc(g.expiry)}</span></div>`).join('')}</div></section>` : '';
+  $('v-alerts').innerHTML = `<div><div class="sub">ณ ${esc(a.today)}</div><h1>แจ้งเตือน</h1></div>
+  <div class="chips"><div class="chip c-red"><b>${a.counts.expired}</b><span>หมดอายุ</span></div><div class="chip c-orange"><b>${a.counts.urgent}</b><span>≤ ${a.settings.urgent} วัน</span></div><div class="chip c-yellow"><b>${a.counts.warn}</b><span>≤ ${a.settings.warn} วัน</span></div></div>
+  ${sec('หมดอายุแล้ว — เก็บออกจากชั้น', 'c-red', a.expired, a.counts.expired)}
+  ${sec('หมดอายุภายใน ' + a.settings.urgent + ' วัน — ส่งสเตอไรล์', 'c-orange', a.urgent, a.counts.urgent)}
+  ${sec('หมดอายุภายใน ' + a.settings.warn + ' วัน', 'c-yellow', a.warn, a.counts.warn)}
+  ${a.overdue.length ? `<section style="display:flex;flex-direction:column;gap:6px"><div class="between"><h2>ส่งสเตอไรล์ค้างเกิน ${a.settings.overdue} วัน</h2><span class="sub">${a.counts.overdue} ซอง</span></div>
+  <div class="list">${a.overdue.map(o => `<div class="li"><span>${esc(o.name)}</span><span class="tag c-blue">${o.days} วัน</span></div>`).join('')}</div></section>` : ''}
+  ${!a.counts.expired && !a.counts.urgent && !a.counts.warn && !a.overdue.length ? '<div class="card c-green">ไม่มีรายการต้องจัดการ</div>' : ''}`;
+}
+
+/* ---------- stock ---------- */
+async function openStock() {
+  show('stock');
+  $('st-list').innerHTML = '<div class="li sub">กำลังโหลด…</div>';
+  try { S.stock = await call('stock', S.token); } catch (e) { $('st-list').innerHTML = '<div class="li err">' + esc(e.message) + '</div>'; return; }
+  renderStock();
+}
+$('st-q').oninput = renderStock;
+function renderStock() {
+  const q = $('st-q').value.trim().toLowerCase();
+  const rows = S.stock.filter(s => !q || s.name.toLowerCase().indexOf(q) >= 0);
+  $('st-list').innerHTML = rows.length ? rows.map(s => `<div class="li"><span>${esc(s.name)}${s.next ? '<br><span class="sub">หมดก่อนสุด ' + esc(s.next) + '</span>' : ''}</span>
+  <span class="row" style="gap:4px"><span class="tag c-green">พร้อม ${s.ready}</span>${s.ster ? '<span class="tag c-blue">สเตอไรล์ ' + s.ster + '</span>' : ''}${s.expired ? '<span class="tag c-red">หมดอายุ ' + s.expired + '</span>' : ''}</span></div>`).join('')
+    : '<div class="li sub">ไม่พบรายการ</div>';
+}
+
+/* ---------- settings / admin ---------- */
+async function openAdmin() {
+  show('admin');
+  let h = `<div><div class="sub">${S.role === 'admin' ? 'Admin' : 'ผู้สแกน'}</div><h1>ตั้งค่า</h1></div>
+  <div class="card between"><span>เข้าระบบเป็น <b>${esc(S.user)}</b></span><button class="btn ghost sm" id="ad-out">ออกจากระบบ</button></div>`;
+  if (S.role !== 'admin') { $('v-admin').innerHTML = h; bindOut(); return; }
+  $('v-admin').innerHTML = h + '<div class="sub">กำลังโหลด…</div>';
+  bindOut();
+  let d;
+  try { d = await call('adminData', S.token); } catch (e) { return; }
+  renderAdmin(d);
+}
+function bindOut() { $('ad-out').onclick = async () => { try { await call('logout', S.token); } catch (e) {} logoutLocal(); }; }
+function renderAdmin(d) {
+  const s = d.settings;
+  $('v-admin').innerHTML = `<div><div class="sub">Admin</div><h1>ตั้งค่า</h1></div>
+  <div class="card between"><span>เข้าระบบเป็น <b>${esc(S.user)}</b></span><button class="btn ghost sm" id="ad-out">ออกจากระบบ</button></div>
+  <button class="btn" id="ad-items">จัดการรายการและหมวดหมู่</button>
+  <h2>ผู้ใช้</h2>
+  <div class="list">${d.users.map((u, i) => `<div class="li" style="flex-wrap:wrap">
+    <span style="flex:1;min-width:120px">${esc(u.username)}${u.active ? '' : ' <span class="tag c-gray">ปิดใช้</span>'}</span>
+    <select data-u="${i}" class="u-role" style="width:auto;height:38px" aria-label="สิทธิ์ ${esc(u.username)}"><option value="scanner"${u.role !== 'admin' ? ' selected' : ''}>ผู้สแกน</option><option value="admin"${u.role === 'admin' ? ' selected' : ''}>Admin</option></select>
+    <button class="btn ghost sm u-more" data-u="${i}" style="height:38px">แก้ไข</button>
+    <div class="u-box hide" data-u="${i}" style="width:100%;display:flex;gap:8px;flex-wrap:wrap;padding-top:8px">
+      <input type="password" inputmode="numeric" maxlength="6" placeholder="PIN ใหม่ (ถ้าจะเปลี่ยน)" class="u-pin" data-u="${i}" style="flex:1;min-width:140px" aria-label="PIN ใหม่">
+      <label class="row" style="font-size:14px"><input type="checkbox" class="u-act" data-u="${i}"${u.active ? ' checked' : ''} style="width:20px;height:20px">ใช้งาน</label>
+      <button class="btn sm u-save" data-u="${i}">บันทึก</button></div></div>`).join('')}</div>
+  <form id="nu" class="card" style="display:flex;flex-direction:column;gap:10px">
+    <h2>เพิ่มผู้ใช้</h2>
+    <label class="f">ชื่อผู้ใช้ (a-z 0-9 . _ -)<input type="text" id="nu-name" autocapitalize="none"></label>
+    <label class="f">PIN 6 หลัก<input type="password" id="nu-pin" inputmode="numeric" maxlength="6"></label>
+    <label class="f">สิทธิ์<select id="nu-role"><option value="scanner">ผู้สแกน</option><option value="admin">Admin</option></select></label>
+    <button class="btn" type="submit">เพิ่มผู้ใช้</button></form>
+  <form id="ss" class="card" style="display:flex;flex-direction:column;gap:10px">
+    <h2>อายุสเตอไรล์และเกณฑ์เตือน (วัน)</h2>
+    <label class="f">อายุสเตอไรล์ค่าตั้งต้น<input type="number" id="ss-shelf" value="${s.shelf}"></label>
+    <label class="f">เตือนใกล้หมดอายุ<input type="number" id="ss-warn" value="${s.warn}"></label>
+    <label class="f">เตือนด่วน<input type="number" id="ss-urgent" value="${s.urgent}"></label>
+    <label class="f">ส่งสเตอไรล์ค้างนานเกิน<input type="number" id="ss-over" value="${s.overdue}"></label>
+    <div class="sub">อายุสเตอไรล์รายรายการ ตั้งได้ในชีต Items คอลัมน์ G</div>
+    <button class="btn" type="submit">บันทึกค่า</button></form>`;
+  bindOut();
+  $('ad-items').onclick = openItems;
+  const save = async (i, extra) => {
+    const u = d.users[i];
+    const body = Object.assign({ username: u.username, role: document.querySelector('.u-role[data-u="' + i + '"]').value, active: u.active }, extra || {});
+    try { const nd = await run('saveUser', S.token, body); toast('บันทึกแล้ว'); renderAdmin(nd); } catch (e) { renderAdmin(d); }
+  };
+  document.querySelectorAll('.u-role').forEach(el => el.onchange = () => save(+el.dataset.u));
+  document.querySelectorAll('.u-more').forEach(el => el.onclick = () => document.querySelector('.u-box[data-u="' + el.dataset.u + '"]').classList.toggle('hide'));
+  document.querySelectorAll('.u-save').forEach(el => el.onclick = () => {
+    const i = el.dataset.u, pin = document.querySelector('.u-pin[data-u="' + i + '"]').value.trim();
+    if (pin && !/^\d{6}$/.test(pin)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
+    save(+i, { pin: pin || undefined, active: document.querySelector('.u-act[data-u="' + i + '"]').checked });
+  });
+  $('nu').onsubmit = async e => {
+    e.preventDefault();
+    const pin = $('nu-pin').value.trim();
+    if (!/^\d{6}$/.test(pin)) { toast('PIN ต้องเป็นตัวเลข 6 หลัก'); return; }
+    try { const nd = await run('saveUser', S.token, { username: $('nu-name').value, pin: pin, role: $('nu-role').value }); toast('เพิ่มผู้ใช้แล้ว'); renderAdmin(nd); } catch (e) {}
+  };
+  $('ss').onsubmit = async e => {
+    e.preventDefault();
+    try {
+      const nd = await run('saveSettings', S.token, { shelf: $('ss-shelf').value, warn: $('ss-warn').value, urgent: $('ss-urgent').value, overdue: $('ss-over').value });
+      toast('บันทึกค่าแล้ว'); renderAdmin(nd);
+    } catch (e) {}
+  };
+}
+
+/* ---------- admin: รายการ & หมวดหมู่ ---------- */
+const IA = { tab: 'items', filter: 'all', q: '', shown: 80, panel: null, cpanel: null, data: null, fresh: null };
+const iaNorm = s => String(s).toLowerCase().replace(/\s+/g, ' ').trim();
+const iaCount = c => IA.data.items.filter(i => c === 'all' || i.cat === c).length;
+const iaPacks = c => IA.data.items.filter(i => c === 'all' || i.cat === c).reduce((a, i) => a + i.packs, 0);
+function iaNextId() {
+  let max = 0;
+  IA.data.items.forEach(i => { const m = /^I(\d+)$/.exec(i.id); if (m) max = Math.max(max, +m[1]); });
+  return 'I' + String(max + 1).padStart(3, '0');
+}
+function iaDup(name, exceptId) { return IA.data.items.find(i => i.id !== exceptId && iaNorm(i.name) === iaNorm(name)); }
+function iaCatDup(name, except) { return IA.data.cats.find(c => c !== except && iaNorm(c) === iaNorm(name)); }
+
+async function openItems() {
+  show('items');
+  $('v-items').innerHTML = '<div class="sub">กำลังโหลด…</div>';
+  try { IA.data = await call('itemsAdmin', S.token); } catch (e) { $('v-items').innerHTML = '<div class="err">' + esc(e.message) + '</div>'; return; }
+  IA.panel = null; IA.cpanel = null;
+  $('v-items').innerHTML = `
+    <div class="row"><button class="btn ghost sm" data-go="admin">← ตั้งค่า</button></div>
+    <div><div class="sub">Admin</div><h1>รายการและหมวดหมู่</h1></div>
+    <div class="seg"><button id="ia-t1">รายการ</button><button id="ia-t2">หมวดหมู่</button></div>
+    <div id="ia-items" style="display:flex;flex-direction:column;gap:12px">
+      <div class="row"><input type="search" id="ia-q" placeholder="ค้นหาชื่อ หรือรหัส เช่น I045" aria-label="ค้นหารายการ" autocomplete="off" style="flex:1;min-width:0"><button class="btn sm" id="ia-add">+ เพิ่มรายการใหม่</button></div>
+      <label class="catpick"><span>หมวด</span><select id="ia-cat" aria-label="เลือกหมวด"></select></label>
+      <div class="card hide" id="ia-panel" style="display:flex;flex-direction:column;gap:12px"></div>
+      <div class="summary" id="ia-sum"></div>
+      <div class="list" id="ia-list"></div>
+    </div>
+    <div id="ia-cats" class="hide" style="display:flex;flex-direction:column;gap:12px">
+      <div class="between"><h2>หมวดหมู่</h2><button class="btn sm" id="ia-cadd">+ เพิ่มหมวดหมู่</button></div>
+      <div class="card hide" id="ia-cpanel" style="display:flex;flex-direction:column;gap:12px"></div>
+      <div class="list" id="ia-clist"></div>
+      <div class="sub">แตะชื่อหมวดเพื่อดูรายการในหมวดนั้น · แก้ชื่อหมวด รายการในหมวดเปลี่ยนตามทันที · ลบหมวดที่ยังมีรายการ ต้องเลือกหมวดที่จะย้ายไปก่อน</div>
+    </div>`;
+  $('ia-t1').onclick = () => iaTab('items');
+  $('ia-t2').onclick = () => iaTab('cats');
+  $('ia-q').value = IA.q;
+  $('ia-q').oninput = () => { IA.q = $('ia-q').value; IA.shown = 80; iaList(); };
+  $('ia-cat').onchange = e => { IA.filter = e.target.value; IA.shown = 80; iaClosePanel(); iaList(); };
+  $('ia-add').onclick = () => { IA.panel = { mode: 'add', cat: IA.filter !== 'all' ? IA.filter : IA.data.cats[0], name: '' }; iaPanel(); $('ia-name').focus(); };
+  $('ia-list').onclick = e => {
+    if (e.target.closest('#ia-more')) { IA.shown += 80; iaList(); return; }
+    const b = e.target.closest('[data-iid]'); if (!b) return;
+    const it = IA.data.items.find(i => i.id === b.dataset.iid);
+    IA.panel = { mode: 'edit', id: it.id, cat: it.cat, name: it.name, packs: it.packs, confirm: false };
+    iaPanel(); iaList(); window.scrollTo(0, 0);
+  };
+  $('ia-cadd').onclick = () => { IA.cpanel = { mode: 'add', name: '' }; iaCats(); $('ia-cnew').focus(); };
+  $('ia-clist').onclick = iaCatClick;
+  iaTab(IA.tab);
+}
+function iaTab(t) {
+  IA.tab = t;
+  $('ia-t1').classList.toggle('on', t === 'items'); $('ia-t2').classList.toggle('on', t === 'cats');
+  $('ia-items').classList.toggle('hide', t !== 'items'); $('ia-cats').classList.toggle('hide', t !== 'cats');
+  if (t === 'items') { iaCatSelect(); iaList(); if (IA.panel) iaPanel(); } else iaCats();
+}
+function iaCatSelect() {
+  if (IA.filter !== 'all' && IA.data.cats.indexOf(IA.filter) < 0) IA.filter = 'all';
+  $('ia-cat').innerHTML = ['all'].concat(IA.data.cats).map(c =>
+    `<option value="${esc(c)}"${IA.filter === c ? ' selected' : ''}>${c === 'all' ? 'ทุกหมวด' : esc(c)} (${iaCount(c)} รายการ)</option>`).join('');
+}
+function iaList() {
+  const words = iaNorm(IA.q).split(' ').filter(Boolean);
+  const rows = IA.data.items.filter(i => (IA.filter === 'all' || i.cat === IA.filter) &&
+    words.every(w => iaNorm(i.name).indexOf(w) >= 0 || i.id.toLowerCase() === w));
+  rows.sort((a, b) => (b.id === IA.fresh) - (a.id === IA.fresh));
+  const pk = rows.reduce((a, i) => a + i.packs, 0);
+  $('ia-sum').innerHTML = `<div style="min-width:0"><div class="sub">${IA.q ? 'ผลค้นหาใน' : 'หมวด'}</div><div class="big">${IA.filter === 'all' ? 'ทุกหมวด' : esc(IA.filter)}</div></div>
+    <div class="stat"><div><b>${rows.length}</b><span>รายการ</span></div><div><b>${pk}</b><span>ซองในระบบ</span></div></div>`;
+  const sel = IA.panel && IA.panel.mode === 'edit' ? IA.panel.id : null;
+  $('ia-list').innerHTML = rows.length ? rows.slice(0, IA.shown).map(i => `
+    <button type="button" class="li itembtn${i.id === IA.fresh ? ' fresh' : ''}${sel === i.id ? ' sel' : ''}" data-iid="${esc(i.id)}">
+      <span style="min-width:0;display:flex;flex-direction:column;gap:2px"><span style="overflow-wrap:anywhere">${esc(i.name)}</span>
+      <span class="sub" style="font-size:12px"><span class="mono">${esc(i.id)}</span> · ${esc(i.cat)}</span></span>
+      <span class="row" style="flex:none;gap:6px">${i.id === IA.fresh ? '<span class="tag c-green">ใหม่</span>' : ''}<span class="tag ${i.packs ? 'c-blue' : 'c-gray'}">${i.packs} ซอง</span></span>
+    </button>`).join('') + (rows.length > IA.shown ? `<button type="button" class="li itembtn" id="ia-more"><span class="sub" style="margin:0 auto">แสดงเพิ่ม (อีก ${rows.length - IA.shown})</span></button>` : '')
+    : '<div class="li sub">ไม่พบรายการ — กด "+ เพิ่มรายการใหม่"</div>';
+}
+function iaClosePanel() { IA.panel = null; $('ia-panel').classList.add('hide'); $('ia-panel').innerHTML = ''; }
+function iaPanel() {
+  const p = IA.panel, add = p.mode === 'add', box = $('ia-panel');
+  const dup = p.name.trim() && iaDup(p.name, p.id);
+  box.innerHTML = `
+    <div class="between"><h2>${add ? 'เพิ่มรายการใหม่' : 'แก้ไขรายการ'}</h2><button type="button" class="btn ghost sm" id="ia-close">ปิด</button></div>
+    <div class="idbox"><span>${add ? 'รหัสที่จะได้' : 'รหัสรายการ'}</span><b class="mono">${esc(add ? iaNextId() : p.id)}</b></div>
+    <label class="f">หมวด<select id="ia-pcat">${IA.data.cats.map(c => `<option${c === p.cat ? ' selected' : ''}>${esc(c)}</option>`).join('')}</select></label>
+    <label class="f">ชื่อรายการ<input type="text" id="ia-name" value="${esc(p.name)}" autocomplete="off" placeholder="เช่น Distal fibula 3.5 Lt 7 hole"></label>
+    <div id="ia-msg">${dup ? `<div class="card c-orange" style="padding:8px 12px;font-size:13px">ชื่อนี้มีอยู่แล้ว (${esc(dup.id)} · ${esc(dup.cat)})</div>` : ''}</div>
+    <button type="button" class="btn" id="ia-save"${!p.name.trim() || dup ? ' disabled' : ''}>${add ? 'เพิ่มรายการ' : 'บันทึกการแก้ไข'}</button>
+    ${add ? '' : p.packs ? `<div class="sub">ลบไม่ได้ เพราะมี ${p.packs} ซองของรายการนี้ในระบบ (เก็บไว้เป็นประวัติ) แก้ชื่อหรือย้ายหมวดได้ตามปกติ</div>`
+      : p.confirm ? `<div class="card c-red" style="display:flex;flex-direction:column;gap:10px"><b>ลบ "${esc(p.name)}"?</b>
+        <div class="row"><button type="button" class="btn sm danger" id="ia-del-ok">ลบรายการ</button><button type="button" class="btn ghost sm" id="ia-del-no">ยกเลิก</button></div></div>`
+      : `<button type="button" class="btn ghost sm" id="ia-del" style="align-self:flex-start;color:var(--red)">ลบรายการนี้</button>`}`;
+  box.classList.remove('hide');
+  $('ia-close').onclick = () => { iaClosePanel(); iaList(); };
+  $('ia-pcat').onchange = e => { p.cat = e.target.value; };
+  $('ia-name').oninput = e => {
+    p.name = e.target.value;
+    const d = p.name.trim() && iaDup(p.name, p.id);
+    $('ia-msg').innerHTML = d ? `<div class="card c-orange" style="padding:8px 12px;font-size:13px">ชื่อนี้มีอยู่แล้ว (${esc(d.id)} · ${esc(d.cat)})</div>` : '';
+    $('ia-save').disabled = !p.name.trim() || !!d;
+  };
+  $('ia-name').onkeydown = e => { if (e.key === 'Enter' && !$('ia-save').disabled) iaSave(); };
+  $('ia-save').onclick = iaSave;
+  if ($('ia-del')) $('ia-del').onclick = () => { p.confirm = true; iaPanel(); };
+  if ($('ia-del-no')) $('ia-del-no').onclick = () => { p.confirm = false; iaPanel(); };
+  if ($('ia-del-ok')) $('ia-del-ok').onclick = async () => {
+    try { IA.data = await run('deleteItem', S.token, p.id); } catch (e) { return; }
+    toast('ลบ ' + p.id + ' แล้ว'); iaClosePanel(); iaCatSelect(); iaList();
+  };
+}
+async function iaSave() {
+  const p = IA.panel;
+  let res;
+  try { res = await run('saveItem', S.token, { id: p.mode === 'edit' ? p.id : '', name: p.name, cat: p.cat }); } catch (e) { return; }
+  IA.data = res;
+  if (p.mode === 'add') {
+    IA.fresh = res.added; IA.filter = p.cat; IA.q = ''; $('ia-q').value = '';
+    toast('เพิ่ม ' + res.added + ' แล้ว');
+    IA.panel = { mode: 'add', cat: p.cat, name: '' };
+    iaCatSelect(); iaList(); iaPanel(); $('ia-name').focus();
+  } else {
+    toast('บันทึก ' + p.id + ' แล้ว'); iaClosePanel(); iaCatSelect(); iaList();
+  }
+}
+function iaCats() {
+  const cp = IA.cpanel;
+  $('ia-clist').innerHTML = IA.data.cats.map(c => {
+    const n = iaCount(c);
+    if (cp && cp.mode === 'rename' && cp.cat === c) return `<div class="li" style="flex-direction:column;align-items:stretch;gap:8px">
+      <label class="f">ชื่อหมวดใหม่<input type="text" id="ia-cren" value="${esc(cp.name)}" autocomplete="off"></label><div id="ia-cmsg"></div>
+      <div class="row"><button type="button" class="btn sm" id="ia-cren-ok">บันทึกชื่อ</button><button type="button" class="btn ghost sm" id="ia-ccancel">ยกเลิก</button><span class="sub">${n} รายการจะย้ายตาม</span></div></div>`;
+    if (cp && cp.mode === 'delete' && cp.cat === c) {
+      const others = IA.data.cats.filter(x => x !== c);
+      return `<div class="li" style="flex-direction:column;align-items:stretch"><div class="card c-red" style="display:flex;flex-direction:column;gap:10px">
+        <b>ลบหมวด "${esc(c)}"?</b>
+        ${n ? `<span>หมวดนี้มี ${n} รายการ เลือกหมวดที่จะย้ายไปก่อนลบ</span><label class="f" style="color:inherit">ย้ายรายการไปที่<select id="ia-cmove">${others.map(o => `<option>${esc(o)}</option>`).join('')}</select></label>` : '<span>หมวดนี้ไม่มีรายการ ลบได้ทันที</span>'}
+        <div class="row"><button type="button" class="btn sm danger" id="ia-cdel-ok"${n && !others.length ? ' disabled' : ''}>${n ? 'ย้ายรายการแล้วลบหมวด' : 'ลบหมวด'}</button><button type="button" class="btn ghost sm" id="ia-ccancel">ยกเลิก</button></div></div></div>`;
+    }
+    return `<div class="li" style="flex-wrap:wrap"><button type="button" class="itembtn catname" data-cview="${esc(c)}" style="flex:1;min-width:140px;padding:0"><span style="text-decoration:underline;text-underline-offset:3px">${esc(c)}</span><br><span class="sub" style="font-size:12px">${n} รายการ · ${iaPacks(c)} ซอง</span></button>
+      <span class="row"><button type="button" class="btn ghost sm" data-cren="${esc(c)}">แก้ชื่อ</button><button type="button" class="btn ghost sm" data-cdel="${esc(c)}" style="color:var(--red)">ลบ</button></span></div>`;
+  }).join('') || '<div class="li sub">ยังไม่มีหมวดหมู่</div>';
+
+  const box = $('ia-cpanel');
+  if (cp && cp.mode === 'add') {
+    box.innerHTML = `<div class="between"><h2>เพิ่มหมวดหมู่</h2><button type="button" class="btn ghost sm" id="ia-cclose">ปิด</button></div>
+      <label class="f">ชื่อหมวด<input type="text" id="ia-cnew" value="${esc(cp.name)}" autocomplete="off" placeholder="เช่น Nail, Arthroplasty"></label>
+      <div id="ia-cmsg2"></div><button type="button" class="btn" id="ia-cadd-ok" disabled>เพิ่มหมวดหมู่</button>`;
+    box.classList.remove('hide');
+    const chk = () => { const d = cp.name.trim() && iaCatDup(cp.name); $('ia-cmsg2').innerHTML = d ? '<div class="sub" style="color:var(--orange)">มีหมวดนี้อยู่แล้ว</div>' : ''; $('ia-cadd-ok').disabled = !cp.name.trim() || !!d; };
+    $('ia-cnew').oninput = e => { cp.name = e.target.value; chk(); }; chk();
+    $('ia-cnew').onkeydown = e => { if (e.key === 'Enter' && !$('ia-cadd-ok').disabled) $('ia-cadd-ok').click(); };
+    $('ia-cadd-ok').onclick = async () => {
+      try { IA.data = await run('saveCategory', S.token, { name: cp.name }); } catch (e) { return; }
+      toast('เพิ่มหมวด ' + cp.name.trim() + ' แล้ว'); IA.cpanel = null; iaCats();
+    };
+    $('ia-cclose').onclick = () => { IA.cpanel = null; iaCats(); };
+  } else { box.classList.add('hide'); box.innerHTML = ''; }
+
+  if ($('ia-ccancel')) $('ia-ccancel').onclick = () => { IA.cpanel = null; iaCats(); };
+  if ($('ia-cren')) {
+    const inp = $('ia-cren'), ok = $('ia-cren-ok');
+    const chk = () => { const d = inp.value.trim() && iaCatDup(inp.value, cp.cat); $('ia-cmsg').innerHTML = d ? '<div class="sub" style="color:var(--orange)">มีหมวดชื่อนี้อยู่แล้ว</div>' : ''; ok.disabled = !inp.value.trim() || !!d; };
+    inp.oninput = () => { cp.name = inp.value; chk(); };
+    inp.onkeydown = e => { if (e.key === 'Enter' && !ok.disabled) ok.click(); };
+    ok.onclick = async () => {
+      try { IA.data = await run('saveCategory', S.token, { old: cp.cat, name: cp.name }); } catch (e) { return; }
+      if (IA.filter === cp.cat) IA.filter = cp.name.replace(/\s+/g, ' ').trim();
+      toast('เปลี่ยนชื่อหมวดแล้ว'); IA.cpanel = null; iaCats();
+    };
+    inp.focus();
+  }
+  if ($('ia-cdel-ok')) $('ia-cdel-ok').onclick = async () => {
+    const target = $('ia-cmove') ? $('ia-cmove').value : '';
+    try { IA.data = await run('deleteCategory', S.token, cp.cat, target); } catch (e) { return; }
+    toast(target ? 'ย้ายรายการไป ' + target + ' แล้วลบหมวด' : 'ลบหมวดแล้ว'); IA.cpanel = null; iaCats();
+  };
+}
+function iaCatClick(e) {
+  const v = e.target.closest('[data-cview]'), r = e.target.closest('[data-cren]'), d = e.target.closest('[data-cdel]');
+  if (v) { IA.filter = v.dataset.cview; IA.q = ''; $('ia-q').value = ''; IA.shown = 80; iaClosePanel(); iaTab('items'); return; }
+  if (r) { IA.cpanel = { mode: 'rename', cat: r.dataset.cren, name: r.dataset.cren }; iaCats(); }
+  if (d) { IA.cpanel = { mode: 'delete', cat: d.dataset.cdel }; iaCats(); }
+}
+
+/* ---------- start ---------- */
+(function init() {
+  const t = load('tok');
+  if (t) { try { const r = JSON.parse(t); S.token = r.token; S.user = r.username; S.role = r.role; openScan(); return; } catch (e) {} }
+  show('login');
+})();
+</script>
+</body>
+</html>
