@@ -189,7 +189,7 @@ function busy(on) { $('busy').style.display = on ? 'flex' : 'none'; }
 const API_URL = 'https://script.google.com/macros/s/AKfycbws7QFs74moTvILVSddGe7gcCQnrv_acX2qHyQqDPDfk5xlMgHZ6VQBQ0XUw7e7huZU5A/exec';
 
 async function call(fn, ...args) {
-  let r;
+  let r, text = '';
   try {
     // ใช้ text/plain เพื่อไม่ให้เบราว์เซอร์ส่ง CORS preflight (Apps Script ไม่รองรับ OPTIONS)
     const res = await fetch(API_URL, {
@@ -197,9 +197,15 @@ async function call(fn, ...args) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({ fn: fn, args: args })
     });
-    r = await res.json();
+    text = await res.text();
   } catch (e) {
-    throw new Error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้ — ตรวจอินเทอร์เน็ต หรือ API_URL');
+    // fetch ล้ม = ติด CORS หรือเน็ต → ส่วนใหญ่เพราะ deploy ไม่ได้ตั้ง "ทุกคน" (Google เด้งไปหน้า login)
+    throw new Error('[E1] เรียก Apps Script ไม่ได้ — ตรวจว่า deploy ตั้งผู้มีสิทธิ์เข้าถึงเป็น "ทุกคน" และใช้ลิงก์ /exec');
+  }
+  try { r = JSON.parse(text); } catch (e) {
+    // ได้คำตอบแต่ไม่ใช่ JSON = ยังไม่มี doPost ในเวอร์ชันที่ deploy หรือสคริปต์ error
+    const plain = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 140);
+    throw new Error('[E2] Apps Script ตอบไม่ถูกรูปแบบ: ' + plain);
   }
   if (!r.ok) {
     const m = String(r.error || 'เกิดข้อผิดพลาด').replace(/^Error:\s*/, '');
